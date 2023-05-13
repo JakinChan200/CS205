@@ -3,11 +3,15 @@
 using namespace std;
 
 
-// vector<vector<int>> start = {{-1, -1, -1, 0, -1, 0, -1, 0, -1, -1},
-//                             {0, 2, 3, 4, 5, 6, 7, 8, 9, 1}};
+vector<vector<int>> start = {{-1, -1, -1, 0, -1, 0, -1, 0, -1, -1},
+                            {0, 2, 3, 4, 5, 6, 7, 8, 9, 1}};
 
-vector<vector<int>> start = {{-1, -1, -1, 0, -1, 8, -1, 0, -1, -1},
-                            {1, 2, 3, 4, 5, 6, 7, 0, 9, 0}};
+// vector<vector<int>> start = {{-1, -1, -1, 0, -1, 8, -1, 0, -1, -1},
+//                             {1, 2, 3, 4, 5, 6, 7, 0, 9, 0}};
+
+// vector<vector<int>> start = {{-1, -1, -1, 1, -1, 5, -1, 8, -1, -1},
+//                             {2, 0, 0, 0, 0, 3, 4, 6, 7, 9}};
+
 struct node{
     vector<vector<int>> state;
     int h = 0;
@@ -19,6 +23,7 @@ struct Compare{
     bool operator()(node &a, node &b){
         //return a.path.size() + a.h > b.path.size() + b.h;
         return a.h + a.path.size() != b.h + b.path.size() ? a.h + a.path.size() > b.h + b.path.size() : a.path.size() > b.path.size(); 
+        //return a.h != b.h ? a.h > b.h : a.path.size() > b.path.size();
     }
 };
 
@@ -87,16 +92,17 @@ node algorithmn(node &startingState, int algo){
     priority_queue<node, vector<node>, Compare> tree;
     tree.push(startingState);
     if(checkCorrectness(startingState, algo)){return startingState;}
-
+    isDupe(startingState, duplicates);
 
     while(!tree.empty()){
         currentNode = tree.top();
         tree.pop();
         numNodesExpanded++;
 
+        // cout << duplicates.size() << endl;
+        // cout << "g: " << currentNode.path.size() << " h: " << currentNode.h << endl;
         // printState(currentNode.state);
         // cout << endl;
-       // cout << duplicates.size();
         string step = "";
 
         //Checking the upper level
@@ -189,15 +195,21 @@ int main(int argc, char** argv){
     cout << "h: " << startingState.h << endl;
     printState(startingState.state);
 
+    auto start = std::chrono::high_resolution_clock::now();
     node answer = algorithmn(startingState, algo);
+    auto stop = std::chrono::high_resolution_clock::now();
+
     if(answer.isSolution){
         cout << "Solution Found!" << endl;
+        cout << "g: " << answer.path.size() << " h: " << answer.h << endl;
         for(int i = 0; i < answer.path.size(); i++){
             cout << answer.path[i];
         }
     }else{
         cout << "Solution Not Found!" << endl;
     }
+
+    cout << "Time to run: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << " milliseconds" << endl;
 
     return 0;
 }
