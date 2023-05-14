@@ -3,6 +3,10 @@
 using namespace std;
 
 
+int numNodesExpanded = 0;
+int maxQueueSize = 0;
+int checkpoint;
+
 vector<vector<int>> start = {{-1, -1, -1, 0, -1, 0, -1, 0, -1, -1},
                             {0, 2, 3, 4, 5, 6, 7, 8, 9, 1}};
 
@@ -27,7 +31,7 @@ struct Compare{
     }
 };
 
-void printState(vector<vector<int>> state){
+void printState(vector<vector<int>> &state){
     for(int i = 0; i < state.size(); i++){
         for(int k = 0; k < state[i].size(); k++){
             if(state[i][k] < 0){
@@ -58,6 +62,13 @@ bool checkCorrectness(node &trial, int algo){
                 }
 
                 switch(algo){
+                    case 4:
+                        if(trial.state[i][j] == 1){
+                            trial.h += (1-i) + abs(j-(trial.state[i][j]-1));
+                            trial.isSolution = trial.h == 0;
+                            return trial.isSolution;
+                        }
+                        break;
                     case 3:
                         trial.h += (1-i) + abs(j-(trial.state[i][j]-1));
                         break;
@@ -85,9 +96,14 @@ void movePerson(node &trial, int startPosX, int startPosY, int endPosX, int endP
 
 node algorithmn(node &startingState, int algo){
 
-    int numNodesExpanded = 0;
+    // auto startingTime = std::chrono::high_resolution_clock::now();
+    // auto checkpoint1 = std::chrono::high_resolution_clock::now();
+    // int gCounter = 0;
+
+    numNodesExpanded = 0;
     set<vector<vector<int>>> duplicates;
     node currentNode;
+    node temp;
 
     priority_queue<node, vector<node>, Compare> tree;
     tree.push(startingState);
@@ -95,21 +111,29 @@ node algorithmn(node &startingState, int algo){
     isDupe(startingState, duplicates);
 
     while(!tree.empty()){
+        maxQueueSize = max((int)tree.size(), maxQueueSize);
         currentNode = tree.top();
         tree.pop();
         numNodesExpanded++;
 
-        // cout << duplicates.size() << endl;
-        // cout << "g: " << currentNode.path.size() << " h: " << currentNode.h << endl;
+        
+        // if(currentNode.path.size() > gCounter){
+        //     auto checkpoint2 = std::chrono::high_resolution_clock::now();
+        //     cout << "Time elapsed to finish g(n): " << gCounter << " is " << std::chrono::duration_cast<std::chrono::milliseconds>(checkpoint2-checkpoint1).count() << " milliseconds." << endl;
+        //     cout << "Time elapsed to reach g(n): " << currentNode.path.size() << " is " << std::chrono::duration_cast<std::chrono::milliseconds>(checkpoint2-startingTime).count() << " milliseconds." << endl;
+        //     checkpoint1 = checkpoint2;
+        //     gCounter = currentNode.path.size();
+        // }
+
+        // cout << "The best state to expand with a g(n) = " << currentNode.path.size() << " and h(n) = " << currentNode.h << " is... " << endl;
         // printState(currentNode.state);
-        // cout << endl;
         string step = "";
 
         //Checking the upper level
         for(int i = 0; i < currentNode.state[0].size(); i++){
             if(currentNode.state[0][i] == 0){
                 if(currentNode.state[1][i] == 0){ continue;}
-                node temp = currentNode;
+                temp = currentNode;
 
                 step = to_string(currentNode.state[1][i]) + " Up\n"; 
                 movePerson(temp, 1, i, 0, i, step);
@@ -128,7 +152,7 @@ node algorithmn(node &startingState, int algo){
             if(currentNode.state[1][i] == 0){
                 if(i != 0){
                     if(currentNode.state[1][i-1] != 0){
-                        node temp = currentNode;
+                        temp = currentNode;
 
                         step = to_string(currentNode.state[1][i-1]) + " Right\n"; 
                         movePerson(temp, 1, i-1, 1, i, step);
@@ -143,7 +167,7 @@ node algorithmn(node &startingState, int algo){
                 }
 
                 if(currentNode.state[0][i] > 0){
-                    node temp = currentNode;
+                    temp = currentNode;
 
                     step = to_string(currentNode.state[0][i]) + " Down\n"; 
                     movePerson(temp, 0, i, 1, i, step);
@@ -158,7 +182,7 @@ node algorithmn(node &startingState, int algo){
 
                 if(i != currentNode.state[1].size()-1){
                     if(currentNode.state[1][i+1] != 0){
-                        node temp = currentNode;
+                        temp = currentNode;
 
                         step = to_string(currentNode.state[1][i+1]) + " Left\n"; 
                         movePerson(temp, 1, i+1, 1, i, step);
@@ -182,18 +206,14 @@ node algorithmn(node &startingState, int algo){
 int main(int argc, char** argv){
     int algo = 0;
 
-    while(algo < 1 || algo > 3){
-        cout << "1: for Uniform Cost Search\n2: for A* Misplaced Tile Heuristic \n3: for A* Manhattan Distance" << endl;
+    while(algo < 1 || algo > 4){
+        cout << "1: for Uniform Cost Search\n2: for A* Misplaced Tile Heuristic \n3: for A* Manhattan Distance \n4: for A* Ignoring Soldier Placements" << endl;
         cin >> algo;
     }
 
     node startingState;
     startingState.state = start;
     bool correct = checkCorrectness(startingState, algo);
-
-    cout << "Correctness: " << correct << endl;
-    cout << "h: " << startingState.h << endl;
-    printState(startingState.state);
 
     auto start = std::chrono::high_resolution_clock::now();
     node answer = algorithmn(startingState, algo);
@@ -209,7 +229,10 @@ int main(int argc, char** argv){
         cout << "Solution Not Found!" << endl;
     }
 
-    cout << "Time to run: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << " milliseconds" << endl;
+    cout << endl;
+    cout << "Number of Nodes Expanded: " << numNodesExpanded << endl;
+    cout << "Max Queue Size: " << maxQueueSize << endl;
+    cout << "Time to run: " << std::chrono::duration_cast<std::chrono::seconds>(stop - start).count() << " seconds" << endl;
 
     return 0;
 }
